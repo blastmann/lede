@@ -67,21 +67,8 @@ jobs:
       - name: Generate configuration file
         run: make defconfig
 
-      - name: Prepare toolchain
-        run: |
-          make tools/install -j$(nproc)
-          make toolchain/install -j$(nproc)
-
       - name: Download packages
         run: make download -j16
-
-      - name: Compile Nikki packages (sanity check)
-        run: |
-          test -d ./package/feeds/nikki/luci-app-nikki || (echo "luci-app-nikki package not found in nikki feed" && exit 1)
-          if [ -d ./package/feeds/nikki/nikki ]; then
-            make package/feeds/nikki/nikki/compile V=s
-          fi
-          make package/feeds/nikki/luci-app-nikki/compile V=s
 
       - name: Compile firmware
         run: |
