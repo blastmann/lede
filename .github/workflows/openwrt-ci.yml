@@ -61,15 +61,13 @@ jobs:
         run: |
           sed -i 's/#src-git helloworld/src-git helloworld/g' ./feeds.conf.default
           sed -i 's/#src-git nikki/src-git nikki/g' ./feeds.conf.default
-          ./scripts/feeds update -a
-          ./scripts/feeds install -a
+          ./scripts/feeds update nikki
+          ./scripts/feeds install -a -p nikki
 
       - name: Enable Nikki packages
         run: |
           ./scripts/feeds install -f -p nikki luci-app-nikki
-          cat >> .config <<'EOF'
-          CONFIG_PACKAGE_luci-app-nikki=y
-          EOF
+          grep -q '^CONFIG_PACKAGE_luci-app-nikki=y$' .config || echo 'CONFIG_PACKAGE_luci-app-nikki=y' >> .config
 
       - name: Generate configuration file
         run: make defconfig
@@ -79,6 +77,7 @@ jobs:
 
       - name: Compile Nikki packages (sanity check)
         run: |
+          test -d ./package/feeds/nikki/luci-app-nikki || (echo "luci-app-nikki package not found in nikki feed" && exit 1)
           if [ -d ./package/feeds/nikki/nikki ]; then
             make package/feeds/nikki/nikki/compile V=s
           fi
