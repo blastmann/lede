@@ -60,9 +60,9 @@ jobs:
       - name: Update feeds
         run: |
           sed -i 's/#src-git helloworld/src-git helloworld/g' ./feeds.conf.default
+          sed -i 's/#src-git nikki/src-git nikki/g' ./feeds.conf.default
           ./scripts/feeds update -a
           ./scripts/feeds install -a
-          rm -rf ./feeds/luci/applications/luci-app-openclash
 
       - name: Generate configuration file
         run: make defconfig
