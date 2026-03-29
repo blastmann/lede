@@ -271,7 +271,7 @@ $(eval $(call KernelPackage,iio-bme680-spi))
 
 define KernelPackage/iio-bmp280
   TITLE:=BMP180/BMP280/BME280 pressure/temperatur sensor
-  DEPENDS:=+kmod-regmap-core
+  DEPENDS:=+kmod-regmap-core +LINUX_6_12:kmod-industrialio-triggered-buffer
   KCONFIG:=CONFIG_BMP280
   FILES:=$(LINUX_DIR)/drivers/iio/pressure/bmp280.ko
   $(call AddDepends/iio)
@@ -316,6 +316,24 @@ define KernelPackage/iio-bmp280-spi/description
 endef
 
 $(eval $(call KernelPackage,iio-bmp280-spi))
+
+
+define KernelPackage/iio-dps310
+  TITLE:=DPS310/DPS368/DPS422 pressure temperatur sensor
+  DEPENDS:=+kmod-regmap-i2c
+  KCONFIG:=CONFIG_DPS310
+  FILES:=$(LINUX_DIR)/drivers/iio/pressure/dps310.ko
+  AUTOLOAD:=$(call AutoProbe,dps310)
+  $(call AddDepends/iio)
+endef
+
+define KernelPackage/iio-dps310/description
+  Kernel module for Infineon DPS310/DPS368/DPS422 pressure and
+  temperature I2C sensor.
+endef
+
+$(eval $(call KernelPackage,iio-dps310))
+
 
 define KernelPackage/iio-htu21
   DEPENDS:=+kmod-i2c-core
@@ -434,7 +452,7 @@ $(eval $(call KernelPackage,iio-st_accel-spi))
 
 
 define KernelPackage/iio-lsm6dsx
-  DEPENDS:=+kmod-iio-kfifo-buf +kmod-regmap-core +LINUX_6_6:kmod-industrialio-triggered-buffer
+  DEPENDS:=+kmod-iio-kfifo-buf +kmod-regmap-core +LINUX_6_6||LINUX_6_12:kmod-industrialio-triggered-buffer
   TITLE:=ST LSM6DSx driver for IMU MEMS sensors
   KCONFIG:=CONFIG_IIO_ST_LSM6DSX
   FILES:=$(LINUX_DIR)/drivers/iio/imu/st_lsm6dsx/st_lsm6dsx.ko
