@@ -72,6 +72,11 @@ jobs:
       - name: Generate configuration file
         run: make defconfig
 
+      - name: Prepare toolchain
+        run: |
+          make tools/install -j$(nproc)
+          make toolchain/install -j$(nproc)
+
       - name: Download packages
         run: make download -j16
 
