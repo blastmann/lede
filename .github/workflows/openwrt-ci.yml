@@ -60,15 +60,29 @@ jobs:
       - name: Update feeds
         run: |
           sed -i 's/#src-git helloworld/src-git helloworld/g' ./feeds.conf.default
+          sed -i 's/#src-git nikki/src-git nikki/g' ./feeds.conf.default
           ./scripts/feeds update -a
           ./scripts/feeds install -a
-          rm -rf ./feeds/luci/applications/luci-app-openclash
+
+      - name: Enable Nikki packages
+        run: |
+          ./scripts/feeds install -f -p nikki luci-app-nikki
+          cat >> .config <<'EOF'
+          CONFIG_PACKAGE_luci-app-nikki=y
+          EOF
 
       - name: Generate configuration file
         run: make defconfig
 
       - name: Download packages
         run: make download -j16
+
+      - name: Compile Nikki packages (sanity check)
+        run: |
+          if [ -d ./package/feeds/nikki/nikki ]; then
+            make package/feeds/nikki/nikki/compile V=s
+          fi
+          make package/feeds/nikki/luci-app-nikki/compile V=s
 
       - name: Compile firmware
         run: |
