@@ -59,17 +59,34 @@ jobs:
 
       - name: Update feeds
         run: |
+          # Nikki requires OpenWrt 24.10+ userspace.
+          sed -i 's#^src-git luci .*openwrt-23.05#src-git luci https://github.com/coolsnowwolf/luci.git;openwrt-24.10#' ./feeds.conf.default
           sed -i 's/#src-git helloworld/src-git helloworld/g' ./feeds.conf.default
           sed -i 's/#src-git nikki/src-git nikki/g' ./feeds.conf.default
+          # Provide yq from official feed when upstream packages feed doesn't ship it.
+          grep -q '^src-git openwrt_packages ' ./feeds.conf.default || \
+            echo 'src-git openwrt_packages https://github.com/openwrt/packages.git;openwrt-24.10' >> ./feeds.conf.default
           ./scripts/feeds update -a
           ./scripts/feeds install -a
 
       - name: Generate configuration file
         run: |
           make defconfig
+          echo "CONFIG_PACKAGE_firewall4=y" >> .config
+          echo "# CONFIG_PACKAGE_firewall is not set" >> .config
+          echo "CONFIG_PACKAGE_kmod-inet-diag=y" >> .config
+          echo "CONFIG_PACKAGE_kmod-nft-socket=y" >> .config
+          echo "CONFIG_PACKAGE_kmod-nft-tproxy=y" >> .config
+          echo "CONFIG_PACKAGE_yq=y" >> .config
           echo "CONFIG_PACKAGE_nikki=y" >> .config
           echo "CONFIG_PACKAGE_luci-app-nikki=y" >> .config
           echo "CONFIG_PACKAGE_luci-i18n-nikki-zh-cn=y" >> .config
+          make defconfig
+          if ! grep -q '^CONFIG_PACKAGE_luci-app-nikki=y' .config; then
+            echo "::error::luci-app-nikki dependencies are still unsatisfied after enabling prerequisites."
+            echo "::error::Please verify feed versions and package availability for yq/firewall4/nft kmods."
+            exit 1
+          fi
 
       - name: Download packages
         run: make download -j16
