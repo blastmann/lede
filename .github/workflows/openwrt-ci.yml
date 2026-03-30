@@ -66,10 +66,10 @@ jobs:
 
       - name: Generate configuration file
         run: |
+          make defconfig
           echo "CONFIG_PACKAGE_nikki=y" >> .config
           echo "CONFIG_PACKAGE_luci-app-nikki=y" >> .config
           echo "CONFIG_PACKAGE_luci-i18n-nikki-zh-cn=y" >> .config
-          make defconfig
 
       - name: Download packages
         run: make download -j16
