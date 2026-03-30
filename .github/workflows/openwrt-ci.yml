@@ -8,6 +8,7 @@
 name: OpenWrt-CI
 
 on:
+  workflow_dispatch:
   schedule:
     - cron: 0 20 * * *
 
@@ -62,8 +63,113 @@ jobs:
           ./scripts/feeds update -a
           ./scripts/feeds install -a
 
-      - name: Generate configuration file
+      - name: Integrate OpenClash
+        run: |
+          rm -rf package/feeds/luci/luci-app-openclash package/luci-app-openclash
+          mkdir -p package/luci-app-openclash
+          pushd package/luci-app-openclash
+          git init
+          git remote add -f origin https://github.com/vernesong/OpenClash.git
+          git config core.sparsecheckout true
+          echo "luci-app-openclash" >> .git/info/sparse-checkout
+          git pull --depth 1 origin master
+          git branch --set-upstream-to=origin/master master
+          popd
+          pushd package/luci-app-openclash/luci-app-openclash/tools/po2lmo
+          make
+          sudo make install
+          popd
+          cat >> .config <<'EOF'
+          CONFIG_PACKAGE_luci-app-openclash=y
+          EOF
+
+      - name: Generate base configuration file
         run: make defconfig
+
+      - name: Resolve OpenClash dependencies
+        run: |
+          cat >> .config <<'EOF'
+          CONFIG_PACKAGE_dnsmasq-full=y
+          CONFIG_PACKAGE_bash=y
+          CONFIG_PACKAGE_curl=y
+          CONFIG_PACKAGE_ca-bundle=y
+          CONFIG_PACKAGE_ip-full=y
+          CONFIG_PACKAGE_ruby=y
+          CONFIG_PACKAGE_ruby-yaml=y
+          CONFIG_PACKAGE_kmod-tun=y
+          CONFIG_PACKAGE_kmod-inet-diag=y
+          CONFIG_PACKAGE_luci-compat=y
+          CONFIG_PACKAGE_unzip=y
+          EOF
+          if grep -q '^CONFIG_PACKAGE_firewall4=y' .config; then
+            cat >> .config <<'EOF'
+          CONFIG_PACKAGE_kmod-nft-tproxy=y
+          CONFIG_PACKAGE_dnsmasq_full_nftset=y
+          EOF
+          else
+            cat >> .config <<'EOF'
+          CONFIG_PACKAGE_kmod-ipt-nat=y
+          CONFIG_PACKAGE_ip6tables-mod-nat=y
+          CONFIG_PACKAGE_iptables-mod-tproxy=y
+          CONFIG_PACKAGE_iptables-mod-extra=y
+          CONFIG_PACKAGE_ipset=y
+          CONFIG_PACKAGE_dnsmasq_full_ipset=y
+          EOF
+          fi
+          make defconfig
+
+      - name: Preload OpenClash runtime assets
+        run: |
+          PKG_ROOT="package/luci-app-openclash/luci-app-openclash/root"
+          UI_ROOT="$PKG_ROOT/usr/share/openclash/ui"
+          CORE_ROOT="$PKG_ROOT/etc/openclash/core"
+          TMP_DIR="$(mktemp -d)"
+          ARCH_PACKAGES="$(sed -n 's/^CONFIG_TARGET_ARCH_PACKAGES=\"\\(.*\\)\"$/\\1/p' .config | head -n1)"
+
+          mkdir -p "$UI_ROOT/dashboard" "$UI_ROOT/yacd" "$UI_ROOT/zashboard" "$UI_ROOT/metacubexd" "$CORE_ROOT"
+
+          download_and_unpack_zip() {
+            local url="$1"
+            local include_dir="$2"
+            local target_dir="$3"
+            local zip_path="$TMP_DIR/$(basename "$target_dir").zip"
+            local unpack_dir="$TMP_DIR/$(basename "$target_dir")"
+
+            rm -rf "$zip_path" "$unpack_dir"
+            curl -fL --retry 3 --connect-timeout 30 "$url" -o "$zip_path"
+            unzip -q "$zip_path" -d "$unpack_dir"
+            rm -rf "$target_dir"
+            mkdir -p "$target_dir"
+            cp -a "$unpack_dir/$include_dir"/. "$target_dir/"
+          }
+
+          download_and_unpack_zip "https://codeload.github.com/ayanamist/clash-dashboard/zip/refs/heads/gh-pages" "clash-dashboard-gh-pages" "$UI_ROOT/dashboard"
+          download_and_unpack_zip "https://codeload.github.com/MetaCubeX/Yacd-meta/zip/refs/heads/gh-pages" "Yacd-meta-gh-pages" "$UI_ROOT/yacd"
+          download_and_unpack_zip "https://github.com/Zephyruso/zashboard/releases/latest/download/dist-cdn-fonts.zip" "dist" "$UI_ROOT/zashboard"
+          download_and_unpack_zip "https://codeload.github.com/MetaCubeX/metacubexd/zip/refs/heads/gh-pages" "metacubexd-gh-pages" "$UI_ROOT/metacubexd"
+
+          case "$ARCH_PACKAGES" in
+            aarch64_*) OPENCLASH_CORE_ARCH="linux-arm64" ;;
+            arm_cortex-a*|arm_*neon*|arm_*vfpv3*|arm_*vfpv4*) OPENCLASH_CORE_ARCH="linux-armv7" ;;
+            arm_arm1176jzf-s_vfp|arm_*arm11*|arm_*vfp) OPENCLASH_CORE_ARCH="linux-armv6" ;;
+            arm_*) OPENCLASH_CORE_ARCH="linux-armv5" ;;
+            i386*|i486*|i586*|i686*) OPENCLASH_CORE_ARCH="linux-386" ;;
+            mips64_*) OPENCLASH_CORE_ARCH="linux-mips64" ;;
+            mipsel_*) OPENCLASH_CORE_ARCH="linux-mipsle-softfloat" ;;
+            mips_*) OPENCLASH_CORE_ARCH="linux-mips-softfloat" ;;
+            x86_64) OPENCLASH_CORE_ARCH="linux-amd64" ;;
+            *)
+              echo "Unsupported OpenClash core architecture for ARCH_PACKAGES=$ARCH_PACKAGES"
+              exit 1
+              ;;
+          esac
+
+          curl -fL --retry 3 --connect-timeout 30 \
+            "https://raw.githubusercontent.com/vernesong/OpenClash/core/master/meta/clash-${OPENCLASH_CORE_ARCH}.tar.gz" \
+            -o "$TMP_DIR/clash_meta.tar.gz"
+          tar -xzf "$TMP_DIR/clash_meta.tar.gz" -C "$TMP_DIR"
+          install -m 4755 "$TMP_DIR/clash" "$CORE_ROOT/clash_meta"
+          rm -rf "$TMP_DIR"
 
       - name: Download packages
         run: make download -j16
