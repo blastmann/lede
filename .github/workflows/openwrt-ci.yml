@@ -88,6 +88,7 @@ jobs:
           echo 'CONFIG_TARGET_x86=y' > .config
           echo 'CONFIG_TARGET_x86_64=y' >> .config
           echo 'CONFIG_TARGET_x86_64_Generic=y' >> .config
+          echo 'CONFIG_TARGET_ARCH_PACKAGES="x86_64"' >> .config
           echo 'CONFIG_PACKAGE_luci-app-openclash=y' >> .config
           make defconfig
 
