@@ -16,6 +16,7 @@
 /overlay
 /package/feeds
 /package/openwrt-packages
+/package/luci-app-openclash
 /*.patch
 key-build*
 *.orig
