@@ -85,43 +85,35 @@ jobs:
 
       - name: Generate base configuration file
         run: |
-          cat > .config <<'EOF'
-          CONFIG_TARGET_x86=y
-          CONFIG_TARGET_x86_64=y
-          CONFIG_TARGET_x86_64_Generic=y
-          CONFIG_PACKAGE_luci-app-openclash=y
-          EOF
+          echo 'CONFIG_TARGET_x86=y' > .config
+          echo 'CONFIG_TARGET_x86_64=y' >> .config
+          echo 'CONFIG_TARGET_x86_64_Generic=y' >> .config
+          echo 'CONFIG_PACKAGE_luci-app-openclash=y' >> .config
           make defconfig
 
       - name: Resolve OpenClash dependencies
         run: |
-          cat >> .config <<'EOF'
-          CONFIG_PACKAGE_dnsmasq-full=y
-          CONFIG_PACKAGE_bash=y
-          CONFIG_PACKAGE_curl=y
-          CONFIG_PACKAGE_ca-bundle=y
-          CONFIG_PACKAGE_ip-full=y
-          CONFIG_PACKAGE_ruby=y
-          CONFIG_PACKAGE_ruby-yaml=y
-          CONFIG_PACKAGE_kmod-tun=y
-          CONFIG_PACKAGE_kmod-inet-diag=y
-          CONFIG_PACKAGE_luci-compat=y
-          CONFIG_PACKAGE_unzip=y
-          EOF
+          echo 'CONFIG_PACKAGE_dnsmasq-full=y' >> .config
+          echo 'CONFIG_PACKAGE_bash=y' >> .config
+          echo 'CONFIG_PACKAGE_curl=y' >> .config
+          echo 'CONFIG_PACKAGE_ca-bundle=y' >> .config
+          echo 'CONFIG_PACKAGE_ip-full=y' >> .config
+          echo 'CONFIG_PACKAGE_ruby=y' >> .config
+          echo 'CONFIG_PACKAGE_ruby-yaml=y' >> .config
+          echo 'CONFIG_PACKAGE_kmod-tun=y' >> .config
+          echo 'CONFIG_PACKAGE_kmod-inet-diag=y' >> .config
+          echo 'CONFIG_PACKAGE_luci-compat=y' >> .config
+          echo 'CONFIG_PACKAGE_unzip=y' >> .config
           if grep -q '^CONFIG_PACKAGE_firewall4=y' .config; then
-            cat >> .config <<'EOF'
-          CONFIG_PACKAGE_kmod-nft-tproxy=y
-          CONFIG_PACKAGE_dnsmasq_full_nftset=y
-          EOF
+            echo 'CONFIG_PACKAGE_kmod-nft-tproxy=y' >> .config
+            echo 'CONFIG_PACKAGE_dnsmasq_full_nftset=y' >> .config
           else
-            cat >> .config <<'EOF'
-          CONFIG_PACKAGE_kmod-ipt-nat=y
-          CONFIG_PACKAGE_ip6tables-mod-nat=y
-          CONFIG_PACKAGE_iptables-mod-tproxy=y
-          CONFIG_PACKAGE_iptables-mod-extra=y
-          CONFIG_PACKAGE_ipset=y
-          CONFIG_PACKAGE_dnsmasq_full_ipset=y
-          EOF
+            echo 'CONFIG_PACKAGE_kmod-ipt-nat=y' >> .config
+            echo 'CONFIG_PACKAGE_ip6tables-mod-nat=y' >> .config
+            echo 'CONFIG_PACKAGE_iptables-mod-tproxy=y' >> .config
+            echo 'CONFIG_PACKAGE_iptables-mod-extra=y' >> .config
+            echo 'CONFIG_PACKAGE_ipset=y' >> .config
+            echo 'CONFIG_PACKAGE_dnsmasq_full_ipset=y' >> .config
           fi
           make defconfig
 
