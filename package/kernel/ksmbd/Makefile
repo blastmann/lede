@@ -51,6 +51,7 @@ define KernelPackage/fs-ksmbd/config
 config KSMBD_SMB_INSECURE_SERVER
 	bool "Support for insecure SMB1/CIFS and SMB2.0 protocols"
 	depends on PACKAGE_kmod-fs-ksmbd
+	depends on !LINUX_6_12
 	default n
 	help
 		This enables deprecated insecure protocols dialects: SMB1/CIFS and SMB2.0.
