@@ -82,12 +82,16 @@ jobs:
           make
           sudo make install
           popd
-          cat >> .config <<'EOF'
-          CONFIG_PACKAGE_luci-app-openclash=y
-          EOF
 
       - name: Generate base configuration file
-        run: make defconfig
+        run: |
+          cat > .config <<'EOF'
+          CONFIG_TARGET_x86=y
+          CONFIG_TARGET_x86_64=y
+          CONFIG_TARGET_x86_64_Generic=y
+          CONFIG_PACKAGE_luci-app-openclash=y
+          EOF
+          make defconfig
 
       - name: Resolve OpenClash dependencies
         run: |
