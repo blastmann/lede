@@ -25,7 +25,7 @@ Signed-off-by: Gabor Juhos <juhosg@openwrt.org>
  
 --- a/drivers/pci/quirks.c
 +++ b/drivers/pci/quirks.c
-@@ -316,6 +316,7 @@ static void quirk_mmio_always_on(struct
+@@ -301,6 +301,7 @@ static void quirk_mmio_always_on(struct
  DECLARE_PCI_FIXUP_CLASS_EARLY(PCI_ANY_ID, PCI_ANY_ID,
  				PCI_CLASS_BRIDGE_HOST, 8, quirk_mmio_always_on);
  
